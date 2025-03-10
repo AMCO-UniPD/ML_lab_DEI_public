@@ -1,2 +1,2 @@
 #!/bin/bash
-pip install -U matplotlib
+jupyter notebook
