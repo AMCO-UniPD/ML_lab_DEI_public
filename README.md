@@ -11,5 +11,5 @@ Guide for Jupyter installation: [link](jupyter_docker_install.md)
 Run the following command in the terminal:
 
 ```bash
-singularity exec /nfsd/opt/sif-images/datascience-notebook-torch_version3.sif jupyter notebook
+singularity run /nfsd/opt/sif-images/ML_notebook_v5.sif
 ```
