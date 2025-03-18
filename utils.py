@@ -98,7 +98,13 @@ def plot_multiple_lin_reg(df, target_col, beta):
     # Create a grid of feature values to plot the regression plane
     xrange = [np.linspace(df[col].min(), df[col].max(), 10) for col in feature_cols]
     grid = np.meshgrid(*xrange)
-    y_pred = sum(beta[i] * grid[i] for i in range(len(feature_cols))) + beta[-1]
+    # stack the grid so that we can multiply it by beta
+    X = np.vstack([g.flatten() for g in grid]).T
+    # add a column of ones for the bias before multiplying by beta
+    ones = np.ones((len(X), 1))
+    y_pred = np.hstack([ones, X]) @ beta
+    # reshape the prediction to the shape of the grid
+    y_pred = y_pred.reshape(grid[0].shape)
     fig = px.scatter_3d(df, x=feature_cols[0], y=feature_cols[1], z=target_col)
     fig.add_trace(go.Surface(x=xrange[0], y=xrange[1], z=y_pred, showscale=False))
     fig.update_layout(l)
