@@ -1,5 +1,10 @@
 # Install Docker + Jupyter Lab
 
+> **Updates:**
+> - new image `borsattifr/ml_notebook` and not `jupyter/datascience-notebook`.
+> - you don't need to clone the repository if you use the new image.
+> - ⚠️ Note that if you modify the notebooks that we use during the lectures, you will lose the changes when you close docker. Please download the notebooks and upload them again if you want to save the changes. (right click on the notebook in the jupyter-lab file explorer and download it)
+
 Search on the web for: "install docker desktop" + "windows" or "mac os" depending on the computer you have.
 - For Mac:
   - Link: [https://docs.docker.com/desktop/setup/install/mac-install/](https://docs.docker.com/desktop/setup/install/mac-install/)
@@ -32,10 +37,15 @@ Accept the terms.
 You can click "skip" at the top right (you don’t need an account).
 ![Pasted image 20250228170100](https://github.com/user-attachments/assets/91795fe7-afde-47a6-a402-261c27390ce4)
 
-Click on the search bar and search for "jupyter datascience".
+Click on the search bar and search for "borsattifr/ml_notebook".
 ![Pasted image 20250228170217](https://github.com/user-attachments/assets/7b688654-b1a3-42a6-bece-84ac2ac3fa71)
 
-Click "pull" on the correct image, the one with the Jupyter icon called "jupyter/datascience-notebook".
+Click "pull" on the correct image, the one with the Jupyter icon called "borsattifr/ml_notebook".
+
+⚠️ Note that the latest image is `borsattifr/ml_notebook` and not juptyer/datascience-notebook" as shown in the image below. 
+
+⚠️You should select the `borsattifr/ml_notebook` image.
+
 ![Pasted image 20250228170313](https://github.com/user-attachments/assets/c5e57837-cd75-42e8-a3f0-704f17a18781)
 
 After a few minutes (again, depending on your internet connection speed), you should see the image among the available ones, so click on Run (▶ icon).
@@ -50,6 +60,12 @@ You will see output similar to this, click on the last link.
 
 Jupyter Lab will open, just like we saw in class.
 ![Pasted image 20250228171437](https://github.com/user-attachments/assets/a2a3c9b0-496a-4578-9010-c461686ccd86)
+
+⚠️ If you downloaded the latest image, `borsattifr/ml_notebook`, you will not need to clone the repository, as it is done automatically.
+
+---
+
+If you use another image, you can clone the repository by doing the following:
 
 Click on the terminal icon, and you can git clone our repository with the command:
 ```
