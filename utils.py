@@ -122,3 +122,151 @@ def plt_circle():
     ax.set_ylim(-1.1, 1.1)
     ax.set_xlim(-1.1, 1.1)
     return ax
+
+
+def plot_derivative(f, df, x=np.linspace(-5, 5, 100), t: str | None = None, n=5):
+    """
+    Plot the derivative of a function as vectors along the function.
+    ### Parameters
+    - `f` (function): function to plot
+    - `df` (function): derivative of the function
+    - `x` (array-like): range of x values to plot
+    - `t` (str | None): title of the plot, optional
+    - `n` (int): number of points to plot the derivative at
+    """
+    x_derivatives = np.linspace(x.min(), x.max(), n)
+    r = 1
+    angles = np.arctan(df(x_derivatives))
+    xx = np.vstack(
+        [x_derivatives - r * np.cos(angles), x_derivatives + r * np.cos(angles)]
+    ).T
+    yy = np.vstack(
+        [f(x_derivatives) - r * np.sin(angles), f(x_derivatives) + r * np.sin(angles)]
+    ).T
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=f(x), mode="lines", name="f(x)"))
+    for i in range(n):
+        fig.add_trace(
+            go.Scatter(
+                x=xx[i],
+                y=yy[i],
+                marker=dict(size=15, color="red"),
+                mode="lines",
+                line=dict(width=2),
+                showlegend=i == 0,
+                name="df(x)",
+            )
+        )
+    title = "Derivative as vectors along the function" + (f" - {t}" if t else "")
+    fig.update_layout(title=title, xaxis_title="x", yaxis_title="y")
+    fig.update_yaxes(
+        scaleanchor="x",
+        scaleratio=1,
+    )
+
+    fig.show()
+
+
+def plot_gradient_1d(f, df, x, n=10):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=f(x), mode="lines", name="f(x)"))
+
+    x_n = np.linspace(x.min(), x.max(), n)
+
+    for i in range(n):
+        x_i = x_n[i]
+        x_i_next = x_i + df(x_i)
+        fig.add_trace(
+            go.Scatter(
+                x=[x_i, x_i_next],
+                y=[0, 0],
+                mode="markers+lines",
+                showlegend=i == 0,
+                name=f"Gradient",
+                marker=dict(
+                    size=10,
+                    color="red",
+                    symbol="arrow-bar-up",
+                    angleref="previous",
+                ),
+            )
+        )
+
+    fig.update_layout(title="Gradient in 1D", xaxis_title="x", yaxis_title="f(x)")
+    fig.show()
+
+
+def plot_gradient_2d(
+    f,
+    df,
+    x1=np.linspace(-10, 10, 100),
+    x2=np.linspace(-10, 10, 100),
+    n=10,
+    follow_surface=False,
+):
+    x1, x2 = np.meshgrid(x1, x2)
+    z = f(x1, x2)
+    fig = go.Figure(
+        data=[
+            go.Surface(
+                z=z, x=x1, y=x2, colorscale="Viridis", opacity=0.8, showscale=False
+            ),
+        ]
+    )
+
+    # now we need to plot the gradient as vectors that lie in the horizontal plane (input space)
+    x1_n = np.linspace(x1.min(), x1.max(), n)
+    x2_n = np.linspace(x2.min(), x2.max(), n)
+    x1_n, x2_n = np.meshgrid(x1_n, x2_n)
+
+    for i in range(n):
+        for j in range(n):
+            x1_i = x1_n[i, j]
+            x2_i = x2_n[i, j]
+            g = df(x1_i, x2_i)
+            if follow_surface:
+                z_start = f(x1_i, x2_i)
+                z_end = f(x1_i + g[0], x2_i + g[1])
+                delta_z = z_end - z_start
+                sizeref = 0.3
+            else:
+                z_start = 0
+                z_end = 0
+                delta_z = 0
+                sizeref = 0.8
+
+            # Scatter3d trace (unchanged)
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[x1_i, x1_i + g[0]],
+                    y=[x2_i, x2_i + g[1]],
+                    z=[z_start, z_end],
+                    mode="lines",
+                    line=dict(color="red", width=2),
+                    showlegend=False,
+                )
+            )
+
+            # Updated Cone trace with vertical component
+            fig.add_trace(
+                go.Cone(
+                    x=[x1_i + g[0]],
+                    y=[x2_i + g[1]],
+                    z=[z_end],
+                    u=[g[0]],
+                    v=[g[1]],
+                    w=[delta_z],  # Vertical component added here
+                    showscale=False,
+                    colorscale="Reds",
+                    sizemode="scaled",
+                    sizeref=sizeref,
+                )
+            )
+    l = {"l": 0, "r": 0, "b": 0, "t": 0}
+    fig.update_layout(go.Layout(margin=go.layout.Margin(**l)))
+    fig.update_layout(
+        title="Gradient and function",
+        autosize=False,
+        width=800,  # height=600
+    )
+    fig.show()
