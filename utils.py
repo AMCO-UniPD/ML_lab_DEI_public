@@ -4,6 +4,10 @@ from matplotlib.patches import Circle, Rectangle
 import plotly.express as px
 import plotly.graph_objects as go
 import ipywidgets as widgets
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+import numpy as np
+import matplotlib.pyplot as plt
 from ipywidgets import interact
 
 
@@ -270,3 +274,248 @@ def plot_gradient_2d(
         width=800,  # height=600
     )
     fig.show()
+
+
+def create_2d_meshpoints(X, resolution=200):
+    """
+    Takes a dataset and returns a 2d meshgrid, and the dimensionally reduced dataset.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        The feature matrix of shape (n_samples, n_features)
+    resolution : int
+        The resolution of the meshgrid used to plot the decision boundary
+
+    Returns
+    -------
+    mesh_points : np.ndarray
+        The meshgrid of shape (resolution**2, n_features)
+    xx : np.ndarray
+        The meshgrid of shape (resolution, resolution)
+    yy : np.ndarray
+        The meshgrid of shape (resolution, resolution)
+    X_2d : np.ndarray
+        The dimensionally reduced dataset (n_samples, 2)
+    """
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.decomposition import PCA
+
+    max_dims = 2
+    n_features = X.shape[1]
+    if n_features > max_dims:  # reduce dimensionality to 2 using PCA if needed
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        pca = PCA(n_components=max_dims)
+        X = pca.fit_transform(X_scaled)
+
+    # Create a meshgrid
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(
+        # np.arange(x_min, x_max, resolution), np.arange(y_min, y_max, resolution)
+        np.linspace(x_min, x_max, resolution),
+        np.linspace(y_min, y_max, resolution),
+    )
+    mesh_points = np.c_[xx.ravel(), yy.ravel()]
+
+    if n_features > max_dims:
+        mesh_points = pca.inverse_transform(mesh_points)
+        mesh_points = scaler.inverse_transform(mesh_points)
+
+    return mesh_points, xx, yy, X
+
+def plot_decision_boundary_2d(X_grid, y, prob_function, xx, yy, X_2d, n_features):
+    """
+    Plots the decision boundary of a logistic regression model as a black line
+    dividing the classes space shaded by a color map.
+
+    Parameters
+    ----------
+    X_grid: np.ndarray
+        The meshgrid of shape (n_samples, n_features)
+    y : np.ndarray
+        The target vector of shape (n_samples,)
+    prob_function : callable
+        Returns matrix of shape (n_samples, n_classes) with probabilities for each class and the input is an array of (n_samples, n_features)
+    """
+    probs = prob_function(X_grid)
+    Z = np.argmax(probs, axis=1)
+    Z = Z.reshape(xx.shape)
+
+    plt.contourf(xx, yy, Z, alpha=0.3)
+    plt.scatter(X_2d[:, 0], X_2d[:, 1], c=y, edgecolors="k")
+    # add a black line to the decision boundary
+    n_classes = len(np.unique(y))
+    plt.contour(
+        xx, yy, Z, levels=(np.arange(n_classes) + 0.5), colors="black", linewidths=2
+    )
+    if n_features > 2:
+        plt.xlabel("Principal Component 1")
+        plt.ylabel("Principal Component 2")
+    else:
+        plt.xlabel("Feature 1")
+        plt.ylabel("Feature 2")
+    plt.title("Decision Boundary")
+    plt.show()
+
+def plot_probability_boundary(
+    probability_function,
+    X,
+    y,
+    resolution=200,
+):
+    n_features = X.shape[1]
+    mesh_points, xx, yy, X_2d = create_2d_meshpoints(X, resolution)
+
+    # Get probabilities for all classes
+    probs = probability_function(mesh_points)
+    class_indices = list(range(probs.shape[1]))
+
+    # Create subplots
+    n_subplots = len(class_indices)
+    fig, axes = plt.subplots(1, n_subplots, figsize=(6 * n_subplots, 5))
+    axes = [axes] if n_subplots == 1 else axes
+
+    fig.suptitle("Probability and decision Boundary")
+    cmap = "coolwarm"
+
+    for ax, cls_idx in zip(axes, class_indices):
+        probs_class = probs[:, cls_idx].reshape(xx.shape)
+
+        # Plot probability contours
+        ax.contourf(xx, yy, probs_class, alpha=0.8, cmap=cmap)
+        ax.contour(xx, yy, probs_class, levels=[0.5], colors="black", linewidths=2)
+
+        # Scatter plot of data points
+        ax.scatter(X_2d[:, 0], X_2d[:, 1], c=y, edgecolors="k", s=20)
+
+        ax.set_title(f"Probability of Class {cls_idx}")
+        if n_features > 2:
+            ax.set_xlabel("Principal Component 1")
+            ax.set_ylabel("Principal Component 2")
+        else:
+            ax.set_xlabel("Feature 1")
+            ax.set_ylabel("Feature 2")
+
+        norm = mcolors.Normalize(vmin=0.0, vmax=1.0)
+        mappable = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+        fig.colorbar(mappable, ax=ax, label=f"Probability")
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_combined_probability_boundary(
+    probability_function,
+    X_grid,
+    X_2d,
+    xx,
+    yy,
+    X,
+    y,
+    resolution=200,
+    alpha=0.6,
+    linewidth=2,
+):
+    from utils import create_2d_meshpoints
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from matplotlib.colors import ListedColormap
+    from matplotlib.colors import to_rgba
+    
+    mesh_points = X_grid
+
+    # Get probabilities for all classes
+    probs = probability_function(mesh_points)
+    class_indices = list(range(probs.shape[1]))
+    n_classes = len(class_indices)
+    
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Get default color cycle
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    class_colors = colors[:n_classes]  # Ensure enough colors
+    
+    # Create colormap for data points
+    scatter_cmap = ListedColormap(class_colors)
+    
+    # Compute max class and their probabilities for each mesh point
+    max_probs = np.max(probs, axis=1)
+    max_classes = np.argmax(probs, axis=1)
+    
+    # Reshape to grid
+    max_probs_grid = max_probs.reshape(xx.shape)
+    max_classes_grid = max_classes.reshape(xx.shape)
+    
+    # Convert class colors to RGBA (without alpha)
+    class_rgba = np.array([to_rgba(color) for color in class_colors])
+    
+    # Create RGB array using max_classes_grid to index class colors
+    rgb = class_rgba[max_classes_grid, :3]
+    
+    # Create alpha channel from max_probs_grid scaled by alpha parameter
+    alpha_channel = max_probs_grid[..., np.newaxis] * alpha
+    
+    # Combine into RGBA image
+    rgba_image = np.concatenate([rgb, alpha_channel], axis=2)
+    
+    # Determine the extent of the image
+    extent = [xx.min(), xx.max(), yy.min(), yy.max()]
+    
+    # Plot the RGBA image
+    ax.imshow(
+        rgba_image,
+        extent=extent,
+        origin='lower',
+        zorder=1,  # Ensure it's below the contours and points
+    )
+    
+    # Plot decision boundary lines for each class
+    for i, cls_idx in enumerate(class_indices):
+        color = class_colors[cls_idx]
+        
+        # Get class probabilities and reshape
+        probs_class = probs[:, cls_idx].reshape(xx.shape)
+        # Plot decision boundary line
+        ax.contour(
+            xx, yy, probs_class,
+            levels=[0.5],  # Decision boundary at 0.5 probability
+            colors=[color],
+            linewidths=linewidth,
+            linestyles='solid',
+            alpha=0.8,
+            zorder=2,  # Above the image but below points
+        )
+    
+    # Plot data points with class colors
+    scatter = ax.scatter(
+        X_2d[:, 0], X_2d[:, 1],
+        c=y,
+        cmap=scatter_cmap,
+        edgecolors='k',
+        s=40,
+        zorder=3  # Ensure points are on top
+    )
+    
+    # Add labels and title
+    ax.set_title("Combined Decision Boundaries")
+    if X.shape[1] > 2:
+        ax.set_xlabel("Principal Component 1")
+        ax.set_ylabel("Principal Component 2")
+    else:
+        ax.set_xlabel("Feature 1")
+        ax.set_ylabel("Feature 2")
+    
+    # Create legend for decision boundaries
+    legend_elements = [
+        plt.Line2D([0], [0], color=color, lw=linewidth, 
+                   label=f'Class {cls_idx} Boundary')
+        for cls_idx, color in zip(class_indices, class_colors)
+    ]
+    ax.legend(handles=legend_elements, loc='best')
+    
+    plt.tight_layout()
+    plt.show()
