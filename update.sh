@@ -1,3 +1,3 @@
 #!/bin/bash
-pip install catboost xgboost
+pip install xgboost
 jupyter lab
