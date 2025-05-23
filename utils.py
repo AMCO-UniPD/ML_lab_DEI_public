@@ -9,12 +9,84 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from ipywidgets import interact
 from sklearn.datasets import make_blobs
+from dataclasses import dataclass
 
 from typing import Optional
 import matplotlib.animation as animation
 from matplotlib.colors import to_rgba
 from IPython.display import HTML, display
 
+
+@dataclass
+class BBox:
+    xmin: float
+    xmax: float
+    ymin: float
+    ymax: float
+
+    @property
+    def width(self):
+        return self.xmax - self.xmin
+
+    @property
+    def height(self):
+        return self.ymax - self.ymin
+
+    def lims_along_axis(self, axis):
+        if axis == 0:
+            return self.xmin, self.xmax
+        else:
+            return self.ymin, self.ymax
+
+
+def plot_split_line(split_feature, threshold, bbox: BBox, ax):
+    # if split on x, the line is vertical
+    if split_feature == 0:
+        # Vertical split (x = threshold)
+        ax.plot([threshold, threshold], [bbox.ymin, bbox.ymax], linestyle="--")
+    else:
+        # Horizontal split (y = threshold)
+        ax.plot([bbox.xmin, bbox.xmax], [threshold, threshold], linestyle="--")
+
+
+def plot_tree_with_bboxes(node, bbox: BBox, ax):
+
+    if node.is_leaf:
+        return
+    else:
+        # Plot the split line
+        plot_split_line(node.feature, node.threshold, bbox, ax)
+
+        # Create new bounding boxes for left and right nodes
+        if node.feature == 0:  # Split on x-axis
+            left_bbox = BBox(bbox.xmin, node.threshold, bbox.ymin, bbox.ymax)
+            right_bbox = BBox(node.threshold, bbox.xmax, bbox.ymin, bbox.ymax)
+        else:  # Split on y-axis
+            left_bbox = BBox(bbox.xmin, bbox.xmax, bbox.ymin, node.threshold)
+            right_bbox = BBox(bbox.xmin, bbox.xmax, node.threshold, bbox.ymax)
+
+        # Recursively plot the left and right nodes
+        plot_tree_with_bboxes(node.left_node, left_bbox, ax)
+        plot_tree_with_bboxes(node.right_node, right_bbox, ax)
+
+
+def print_tree(self, level, prefix):
+    connector = "├── " if level > 0 else ""
+    if self.is_leaf:
+        return f"{prefix}{connector}Leaf(prediction={self.prediction})"
+    else:
+        s = f"{prefix}{connector}Node(feature={self.feature}, threshold={self.threshold})\n"
+        if self.left_node:
+            s += self.left_node.__repr__(
+                level + 1, prefix + ("│   " if level > 0 else "    ")
+            )
+        if self.right_node:
+            right_prefix = prefix + ("│   " if level > 0 else "    ")
+            # Replace connector for right child
+            s += "\n" + self.right_node.__repr__(level + 1, right_prefix).replace(
+                "├──", "└──", 1
+            )
+        return s
 
 
 def get_interactive_plot_pca():
@@ -638,7 +710,9 @@ def centroids_animation(
 
     fig, ax = plt.subplots()  # create figure
     plt.tight_layout()
-    scatter = ax.scatter(X[:, 0], X[:, 1], alpha=0.1)  # background scatter plot of dataset
+    scatter = ax.scatter(
+        X[:, 0], X[:, 1], alpha=0.1
+    )  # background scatter plot of dataset
     ax.set_xlim(x_min - x_margin, x_max + x_margin)
     ax.set_ylim(y_min - y_margin, y_max + y_margin)
 
