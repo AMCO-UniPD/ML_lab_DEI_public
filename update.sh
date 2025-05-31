@@ -29,6 +29,7 @@ if [ -n "$EXAM" ]; then
         rm "$tar_file"
     else
         echo "Failed to extract the tar file. Please check your password and try again."
+        exit 1
     fi
 
     # download slides
