@@ -3,9 +3,14 @@
 # check if environment variable EXAM is set
 if [ -n "$EXAM" ]; then
 
-    git checkout exam
-    git fetch
-    git pull
+    if [ -n "$FORCE" ]; then
+        git fetch
+        git reset --hard origin/exam
+    else
+        git checkout exam
+        git fetch
+        git pull
+    fi
 
     tar_files=(*.tar.gz)
     echo "Select a file to extract:"
@@ -27,6 +32,7 @@ if [ -n "$EXAM" ]; then
     fi
 
     # download slides
+    echo "Downloading extra material..."
     curl -o ML_exam_slides.tar.xz https://cloud.dei.unipd.it/public.php/dav/files/qiiccDGqZREDbHB
 
     # check if the download was successful
