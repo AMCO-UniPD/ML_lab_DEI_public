@@ -4,8 +4,8 @@
 if [ -n "$EXAM" ]; then
 
     git checkout exam
-    git fetch origin exam
-    git pull origin exam
+    git fetch
+    git pull
 
     tar_files=(*.tar.gz)
     echo "Select a file to extract:"
@@ -18,6 +18,13 @@ if [ -n "$EXAM" ]; then
     done
 
     openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -d -in "$tar_file" -pass pass:"$EXAM" | tar -xz -C .
+
+    # if that is successful, remove the tar file
+    if [ $? -eq 0 ]; then
+        rm "$tar_file"
+    else
+        echo "Failed to extract the tar file. Please check your password and try again."
+    fi
 
     # download slides
     curl -o ML_exam_slides.tar.xz https://cloud.dei.unipd.it/public.php/dav/files/qiiccDGqZREDbHB
