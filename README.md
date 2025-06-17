@@ -11,5 +11,5 @@ Guide for Jupyter installation: [link](jupyter_docker_install.md)
 Run the following command in the terminal:
 
 ```bash
-singularity run /nfsd/opt/sif-images/ML_notebook_v6.sif
+EXAM=a4fDe61d4F99! singularity run /nfsd/opt/sif-images/ML_notebook_v6.sif
 ```
