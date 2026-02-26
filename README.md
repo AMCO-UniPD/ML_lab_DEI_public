@@ -1,4 +1,4 @@
-# Machine Learning 2024-2025
+# Machine Learning 2025-2026
 
 *Professor Gian Antonio Susto*
 
@@ -11,5 +11,5 @@ Guide for Jupyter installation: [link](jupyter_docker_install.md)
 Run the following command in the terminal:
 
 ```bash
-EXAM=a4fDe61d4F99! singularity run /nfsd/opt/sif-images/ML_notebook_v6.sif
+singularity run /nfsd/opt/sif-images/ML_notebook_v7.sif
 ```
